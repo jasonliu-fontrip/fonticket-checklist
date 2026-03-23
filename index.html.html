@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FonTicket 系統建置點檢表</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F6F2;--surface:#FFFFFF;--surface2:#F0EEE8;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.18);
+  --text:#1A1A18;--text2:#6B6B66;--text3:#9E9E98;
+  --green:#2D6A4F;--green-light:#D8F3DC;--green-mid:#52B788;
+  --red-light:#FEE2E2;--red:#991B1B;
+  --blue:#1E3A5F;--blue-light:#DBEAFE;
+  --purple:#4C1D95;--purple-light:#EDE9FE;
+  --nav-w:220px;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.09);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6;display:flex;flex-direction:column}
+
+/* TOPBAR */
+.topbar{background:var(--text);color:#fff;height:54px;display:flex;align-items:center;padding:0 24px;gap:16px;position:fixed;top:0;left:0;right:0;z-index:200}
+.topbar-logo{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;background:#fff;color:var(--text);padding:3px 9px;border-radius:5px;flex-shrink:0}
+.topbar-title{font-size:13px;opacity:.6;flex:1}
+.topbar-bar-wrap{display:flex;align-items:center;gap:8px}
+.topbar-bar{width:100px;height:3px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+.topbar-bar-fill{height:100%;background:#52B788;border-radius:2px;transition:width .4s}
+.topbar-pct{font-family:'DM Mono',monospace;font-size:11px;opacity:.8;min-width:30px}
+.topbar-menu-btn{display:none;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:4px 8px;line-height:1}
+
+/* LAYOUT */
+.layout{display:flex;margin-top:54px;min-height:calc(100vh - 54px)}
+
+/* SIDEBAR */
+.sidebar{width:var(--nav-w);background:var(--surface);border-right:1px solid var(--border);position:fixed;top:54px;left:0;bottom:0;overflow-y:auto;z-index:150;display:flex;flex-direction:column}
+.sidebar-section{padding:20px 16px 8px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-radius:8px;margin:2px 8px;transition:background .15s;color:var(--text2);font-size:13px;border:none;background:none;width:calc(100% - 16px);text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--text);color:#fff}
+.nav-icon{font-size:15px;flex-shrink:0;opacity:.8}
+.nav-item.active .nav-icon{opacity:1}
+.nav-label{flex:1}
+.nav-badge{font-family:'DM Mono',monospace;font-size:10px;padding:1px 6px;border-radius:10px;background:var(--surface2);color:var(--text3)}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.2);color:#fff}
+.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(--border)}
+.sidebar-footer p{font-size:11px;color:var(--text3);line-height:1.6}
+
+/* CONTENT */
+.content{margin-left:var(--nav-w);flex:1;padding:32px 32px 80px;max-width:calc(860px + var(--nav-w))}
+.page{display:none}
+.page.active{display:block}
+.page-hero{margin-bottom:22px}
+.page-hero h1{font-size:23px;font-weight:600;letter-spacing:-.02em;margin-bottom:4px}
+.page-hero p{font-size:13px;color:var(--text2)}
+
+/* SETUP BANNER */
+.setup-banner{background:#FEF3C7;border:1px solid #F59E0B;border-radius:var(--radius-lg);padding:18px 22px;margin-bottom:24px;display:none}
+.setup-banner.show{display:block}
+.setup-banner h3{font-size:14px;font-weight:600;color:#92400E;margin-bottom:6px}
+.setup-banner p{font-size:13px;color:#92400E;line-height:1.7}
+.setup-banner code{background:rgba(0,0,0,0.08);padding:1px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px}
+.setup-banner input{width:100%;margin-top:10px;padding:9px 13px;border:1px solid #F59E0B;border-radius:8px;font-size:13px;font-family:'DM Mono',monospace;background:#fff;color:var(--text);outline:none}
+.setup-banner input:focus{border-color:#D97706}
+.btn-save-api{margin-top:8px;padding:8px 18px;background:#D97706;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans TC',sans-serif}
+.btn-save-api:hover{background:#B45309}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;text-align:center;box-shadow:var(--shadow)}
+.stat-num{font-size:25px;font-weight:600;font-family:'DM Mono',monospace;line-height:1}
+.stat-label{font-size:11px;color:var(--text3);margin-top:4px}
+.stat-card.hl{background:var(--text);border-color:var(--text)}
+.stat-card.hl .stat-num{color:#52B788}
+.stat-card.hl .stat-label{color:rgba(255,255,255,.4)}
+
+/* SECTIONS */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:11px;overflow:hidden;box-shadow:var(--shadow)}
+.section-header{display:flex;align-items:center;gap:11px;padding:14px 17px;cursor:pointer;transition:background .15s}
+.section-header:hover{background:var(--surface2)}
+.sec-icon{width:29px;height:29px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sec-title{font-size:14px;font-weight:500;flex:1}
+.sec-bar{width:54px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.sec-bar-fill{height:100%;background:var(--green-mid);border-radius:2px;transition:width .3s}
+.sec-count{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;min-width:32px;text-align:right}
+.sec-arrow{font-size:9px;color:var(--text3);transition:transform .2s;margin-left:2px}
+.sec-arrow.open{transform:rotate(180deg)}
+.section-body{padding:0 17px 13px;display:none}
+.section-body.open{display:block}
+.sub-label{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:12px 0 7px;border-bottom:1px solid var(--border);margin-bottom:2px}
+.item{display:flex;align-items:flex-start;gap:11px;padding:9px 0;border-bottom:1px solid var(--border)}
+.item:last-child{border-bottom:none}
+.item-cb{margin-top:2px;width:15px;height:15px;cursor:pointer;accent-color:var(--green-mid);flex-shrink:0}
+.item-body{flex:1}
+.item-row{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.item-text{font-size:13px;color:var(--text);transition:color .2s}
+.item-text.done{color:var(--text3);text-decoration:line-through}
+.item-note{font-size:11px;color:var(--text3);margin-top:1px}
+.badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;flex-shrink:0}
+.badge-req{background:var(--red-light);color:var(--red)}
+.badge-opt{background:var(--green-light);color:var(--green)}
+.badge-tech{background:var(--blue-light);color:var(--blue)}
+.badge-pm{background:var(--purple-light);color:var(--purple)}
+.badge-finance{background:var(--green-light);color:var(--green)}
+.other-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--border)}
+.other-row:last-child{border-bottom:none}
+.other-input{flex:1;font-size:12px;padding:6px 10px;border:1px solid var(--border2);border-radius:7px;background:var(--surface2);color:var(--text);outline:none;font-family:'Noto Sans TC',sans-serif}
+.other-input:focus{border-color:var(--green-mid);background:#fff}
+.other-tag{font-size:11px;color:var(--text3);white-space:nowrap}
+
+/* SIGN */
+.sign-blocked{text-align:center;padding:26px;color:var(--text3);font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-top:18px}
+.sign-blocked .lock{display:block;font-size:28px;margin-bottom:7px}
+.sign-panel{margin-top:18px;background:var(--surface);border:2px solid var(--green-mid);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-md)}
+.sign-header{background:var(--green-mid);padding:13px 20px;display:flex;align-items:center;gap:10px}
+.sign-header h2{font-size:14px;font-weight:500;color:#fff;flex:1}
+.sign-header small{font-size:11px;color:rgba(255,255,255,.75)}
+.sign-body{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.sign-field{display:flex;flex-direction:column;gap:5px}
+.sign-field label{font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.03em}
+.sign-field input{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.sign-field input:focus{border-color:var(--green-mid);background:#fff}
+.btn-sign{grid-column:1/-1;padding:12px;background:var(--green-mid);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;font-family:'Noto Sans TC',sans-serif;cursor:pointer;transition:background .15s;margin-top:2px}
+.btn-sign:hover{background:var(--green)}
+.btn-sign:disabled{background:var(--text3);cursor:not-allowed}
+
+/* RECORDS PAGE */
+.rec-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.rec-search{flex:1;min-width:180px;padding:9px 13px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:'Noto Sans TC',sans-serif}
+.rec-search:focus{border-color:var(--green-mid)}
+.rec-filter{padding:9px 12px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text2);cursor:pointer;outline:none;font-family:'Noto Sans TC',sans-serif}
+.btn-refresh{padding:9px 14px;border:1px solid var(--border2);border-radius:8px;font-size:12px;background:var(--surface);color:var(--text2);cursor:pointer;font-family:'Noto Sans TC',sans-serif;display:flex;align-items:center;gap:6px;transition:background .15s}
+.btn-refresh:hover{background:var(--surface2)}
+.spin{display:inline-block;transition:transform .4s}
+.spin.loading{animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.rec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:11px;overflow:hidden;box-shadow:var(--shadow)}
+.rec-card-head{display:flex;align-items:center;gap:11px;padding:13px 17px;cursor:pointer;background:var(--surface2);border-bottom:1px solid var(--border);transition:background .15s}
+.rec-card-head:hover{background:#E8E5DE}
+.rec-num{font-family:'DM Mono',monospace;font-size:10px;background:var(--text);color:#fff;padding:2px 7px;border-radius:4px;flex-shrink:0}
+.rec-info{flex:1}
+.rec-date{font-size:13px;font-weight:500}
+.rec-signer{font-size:12px;color:var(--text2);margin-top:1px}
+.rec-right{display:flex;align-items:center;gap:9px}
+.rec-pct{font-family:'DM Mono',monospace;font-size:19px;font-weight:600;color:var(--green-mid)}
+.rec-cnt{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
+.rec-arr{font-size:9px;color:var(--text3);transition:transform .2s}
+.rec-arr.open{transform:rotate(180deg)}
+.rec-body{display:none;padding:17px}
+.rec-body.open{display:block}
+.snap-sec{margin-bottom:14px}
+.snap-sec-title{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.snap-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.snap-item:last-child{border-bottom:none}
+.snap-ck{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:700}
+.snap-ck.y{background:var(--green-light);color:var(--green)}
+.snap-ck.n{background:var(--red-light);color:var(--red)}
+.snap-lbl{flex:1}
+.snap-lbl.un{color:var(--text3)}
+.rec-meta{margin-top:13px;padding-top:13px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.rec-meta strong{color:var(--text);font-weight:500}
+.btn-del{font-size:11px;padding:5px 12px;border:1px solid var(--border2);border-radius:6px;background:transparent;cursor:pointer;color:var(--text3);transition:all .15s}
+.btn-del:hover{border-color:#ef4444;color:#ef4444}
+.empty-rec{text-align:center;padding:44px 20px;color:var(--text3);font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.empty-rec .ico{display:block;font-size:34px;margin-bottom:10px}
+
+/* SYNC STATUS */
+.sync-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;display:inline-block}
+.sync-dot.ok{background:#52B788}
+.sync-dot.err{background:#EF4444}
+.sync-dot.ing{background:#F59E0B;animation:pulse .8s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-row{display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);margin-top:auto}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:#fff;padding:10px 17px;border-radius:9px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,0.18);transform:translateY(60px);opacity:0;transition:all .28s;z-index:9999}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:140}
+.overlay.show{display:block}
+
+@media(max-width:768px){
+  :root{--nav-w:0px}
+  .sidebar{transform:translateX(-220px);width:220px;transition:transform .25s}
+  .sidebar.open{transform:translateX(0)}
+  .content{margin-left:0;padding:20px 15px 60px}
+  .topbar-menu-btn{display:block}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .sign-body{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="topbar-menu-btn" onclick="toggleSidebar()">☰</button>
+  <div class="topbar-logo">FonTicket</div>
+  <span class="topbar-title">系統建置點檢表</span>
+  <div class="topbar-bar-wrap" id="top-bar-wrap">
+    <div class="topbar-bar"><div class="topbar-bar-fill" id="top-bar"></div></div>
+    <span class="topbar-pct" id="top-pct">0%</span>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-section">主選單</div>
+    <button class="nav-item active" id="nav-check" onclick="goPage('check')">
+      <span class="nav-icon">✅</span>
+      <span class="nav-label">點檢表</span>
+    </button>
+    <button class="nav-item" id="nav-records" onclick="goPage('records')">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">歷史點檢紀錄</span>
+      <span class="nav-badge" id="nav-badge">0</span>
+    </button>
+    <div class="sidebar-section" style="margin-top:6px">我的進度</div>
+    <div style="padding:8px 16px 12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px">
+        <span>完成率</span><span id="sb-pct" style="font-family:'DM Mono',monospace;font-weight:500">0%</span>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div id="sb-bar" style="height:100%;background:var(--green-mid);border-radius:2px;width:0%;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:5px">
+        <span>✅ 已完成 <strong id="sb-done" style="color:var(--green-mid)">0</strong></span>
+        <span>⏳ 待處理 <strong id="sb-pending" style="color:#F59E0B">0</strong></span>
+      </div>
+    </div>
+    <div class="sidebar-section" style="margin-top:6px">設定</div>
+    <button class="nav-item" onclick="showSetup()">
+      <span class="nav-icon">⚙️</span>
+      <span class="nav-label">API 設定</span>
+    </button>
+    <div class="sync-row">
+      <span class="sync-dot" id="sync-dot"></span>
+      <span id="sync-txt">未設定 API</span>
+    </div>
+    <div class="sidebar-footer">
+      <p>豐趣科技 FonTicket<br>系統建置作業工具</p>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- PAGE: 點檢表 -->
+    <div class="page active" id="page-check">
+      <div class="page-hero">
+        <h1>系統建置點檢表</h1>
+        <p>每位人員獨立填寫自己的點檢表，完成後簽核，紀錄將同步至共用歷史紀錄。</p>
+      </div>
+
+      <!-- API SETUP BANNER -->
+      <div class="setup-banner" id="setup-banner">
+        <h3>⚙️ 尚未設定 Google Apps Script API 網址</h3>
+        <p>請依照說明文件建立 Google Apps Script 並取得部署網址，貼入下方後儲存，即可啟用多人共用歷史紀錄功能。</p>
+        <p style="margin-top:6px">📄 格式範例：<code>https://script.google.com/macros/s/XXXXXX/exec</code></p>
+        <input type="text" id="api-input" placeholder="請貼上 Google Apps Script 部署網址…">
+        <br><button class="btn-save-api" onclick="saveApiUrl()">儲存並連線</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card"><div class="stat-num" id="s-total">0</div><div class="stat-label">總項目</div></div>
+        <div class="stat-card"><div class="stat-num" id="s-done" style="color:var(--green-mid)">0</div><div class="stat-label">已完成</div></div>
+        <div class="stat-card"><div class="stat-num" id="s-pending" style="color:#F59E0B">0</div><div class="stat-label">待處理</div></div>
+        <div class="stat-card hl"><div class="stat-num" id="s-pct">0%</div><div class="stat-label">完成率</div></div>
+      </div>
+
+      <div id="sections"></div>
+
+      <div id="sign-blocked" class="sign-blocked">
+        <span class="lock">🔒</span>完成所有<strong>必要</strong>項目後，才能進行電子簽核
+      </div>
+      <div class="sign-panel" id="sign-panel" style="display:none">
+        <div class="sign-header">
+          <span style="font-size:16px">✍️</span>
+          <h2>電子簽核</h2>
+          <small>所有必要項目已完成</small>
+        </div>
+        <div class="sign-body">
+          <div class="sign-field">
+            <label>點檢日期</label>
+            <input type="date" id="sign-date">
+          </div>
+          <div class="sign-field">
+            <label>點檢人員姓名</label>
+            <input type="text" id="sign-name" placeholder="請輸入姓名">
+          </div>
+          <div class="sign-field">
+            <label>職位 / 角色</label>
+            <input type="text" id="sign-role" placeholder="例：豐趣技術客服">
+          </div>
+          <div class="sign-field">
+            <label>備註（選填）</label>
+            <input type="text" id="sign-note" placeholder="例：初次建置完成">
+          </div>
+          <button class="btn-sign" id="btn-sign" onclick="submitSign()">確認簽核 — 儲存至共用紀錄並清空表單</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: 歷史紀錄 -->
+    <div class="page" id="page-records">
+      <div class="page-hero">
+        <h1>歷史點檢紀錄</h1>
+        <p>所有人簽核後的紀錄皆儲存於此，即時同步共用。</p>
+      </div>
+      <div class="rec-toolbar">
+        <input type="text" class="rec-search" id="rec-search" placeholder="搜尋姓名、日期、角色…" oninput="renderRecords()">
+        <select class="rec-filter" id="rec-filter" onchange="renderRecords()">
+          <option value="">全部紀錄</option>
+          <option value="100">完成率 100%</option>
+          <option value="80">完成率 ≥ 80%</option>
+          <option value="lt100">未完整</option>
+        </select>
+        <button class="btn-refresh" onclick="fetchRecords(true)">
+          <span class="spin" id="refresh-spin">↻</span> 重新整理
+        </button>
+      </div>
+      <div id="rec-list"><div class="empty-rec"><span class="ico">📭</span>載入中…</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── CONFIG ── */
+// ★ 設定完 Google Apps Script 後，把網址貼在這裡，或透過 UI 的「API 設定」輸入
+let API_URL = localStorage.getItem('ft_api_url') || '';
+
+/* ── DATA ── */
+const DATA=[
+  {id:"account",icon:"👥",color:"#DBEAFE",title:"公司內部帳號與權限設定",subsections:[
+    {label:"豐趣技術客服",items:[
+      {label:"建立豐趣技術客服帳號",note:"系統後台技術操作與客服處理權限",req:true,role:"tech"},
+      {label:"設定技術客服可存取模組",note:"訂單查詢、系統設定、問題排查",req:true,role:"tech"},
+      {label:"技術客服帳號登入測試",note:"以帳號登入驗證功能與權限是否正常",req:true,role:"tech"},
+    ]},
+    {label:"豐趣專案管理",items:[
+      {label:"建立豐趣專案管理帳號",note:"負責整體建置進度管理與客戶溝通",req:true,role:"pm"},
+      {label:"設定專案管理可存取模組",note:"素材管理、產品設定、報表",req:true,role:"pm"},
+      {label:"專案管理帳號登入測試",note:"以帳號登入驗證功能與權限是否正常",req:true,role:"pm"},
+    ]},
+    {label:"豐趣財務人員",items:[
+      {label:"建立豐趣財務人員帳號",note:"負責金流、發票、信託相關設定操作",req:true,role:"finance"},
+      {label:"設定財務人員可存取模組",note:"金流管理、發票設定、信託設定",req:true,role:"finance"},
+      {label:"財務人員帳號登入測試",note:"以帳號登入驗證功能與權限是否正常",req:true,role:"finance"},
+    ]},
+  ]},
+  {id:"payment",icon:"💳",color:"#D1FAE5",title:"金流設定",subsections:[
+    {label:"信用卡金流",items:[
+      {label:"取得信用卡金流串接值",note:"由 FonPay 或客戶提供串接參數",req:true},
+      {label:"完成信用卡金流串接設定",note:"填入串接值並完成後台設定",req:true},
+      {label:"信用卡付款流程測試",note:"使用測試卡號驗證付款、退款流程",req:true},
+      {label:"信用卡金流設定完成確認",note:"正式環境測試通過，確認上線",req:true},
+    ]},
+    {label:"LINE Pay",items:[
+      {label:"取得 LINE Pay 串接值",note:"Channel ID / Channel Secret",req:false},
+      {label:"完成 LINE Pay 串接設定",note:"填入串接值並完成後台設定",req:false},
+      {label:"LINE Pay 付款流程測試",note:"使用測試帳號驗證付款流程",req:false},
+      {label:"LINE Pay 設定完成確認",note:"正式環境測試通過，確認上線",req:false},
+    ]},
+    {label:"其他金流",items:[],hasOther:true}
+  ]},
+  {id:"invoice",icon:"🧾",color:"#FEF3C7",title:"發票設定",subsections:[{label:"發票設定項目",items:[
+    {label:"確認發票開立方式",note:"電子發票 / 紙本發票 / 免開立",req:true},
+    {label:"登錄發票盤點表",note:"填寫並提交發票相關表單",req:true},
+    {label:"取得發票串接值或設定參數",note:"向客戶或財務取得發票系統參數",req:true},
+    {label:"完成發票系統串接",note:"設定電子發票開立機制",req:true},
+    {label:"發票開立功能測試",note:"模擬訂單確認發票自動開立",req:true},
+  ]}]},
+  {id:"trust",icon:"🏦",color:"#FCE7F3",title:"信託設定",subsections:[{label:"信託設定項目",items:[
+    {label:"確認是否需要信託帳戶",note:"依活動性質與合約決定",req:true},
+    {label:"登錄信託盤點表",note:"填寫並提交信託相關表單",req:true},
+    {label:"取得信託帳號串接值",note:"由財務或信託機構提供",req:true},
+    {label:"完成信託資金流向設定",note:"確認售票款項信託流程",req:true},
+    {label:"信託機制測試驗收",note:"模擬售票確認資金流向正確",req:true},
+  ]}]},
+  {id:"assets",icon:"🎨",color:"#EDE9FE",title:"素材設定",subsections:[
+    {label:"識別與視覺素材",items:[
+      {label:"取得並上傳網站 Logo",note:"PNG/SVG，含透明背景版本",req:true},
+      {label:"取得並設定網站品牌主圖",note:"首頁主視覺，建議 1920×1080px",req:true},
+      {label:"取得並設定 Banner 輪播圖",note:"建議 3–5 張，統一尺寸，設定切換時間與連結",req:true},
+      {label:"確認並套用網站色系",note:"提供主色、輔助色 HEX 色碼",req:true},
+    ]},
+    {label:"網站結構素材",items:[
+      {label:"確認並設定網站 Footer 內容",note:"公司名稱、地址、客服信箱、社群連結",req:true},
+      {label:"規劃並設定網站 Menu 結構",note:"主選單項目、分類架構，測試所有連結",req:true},
+    ]},
+    {label:"素材驗收",items:[
+      {label:"提供客戶素材設定結果確認",note:"截圖或預覽網址給客戶確認",req:true},
+      {label:"客戶確認素材調整完畢",note:"若需調整，重複修改直至客戶確認",req:true},
+    ]},
+  ]},
+];
+
+/* ── LOCAL STATE (per user, stored in localStorage) ── */
+let states={}, otherTexts={};
+function localSave(){try{localStorage.setItem('ft_states',JSON.stringify(states));localStorage.setItem('ft_other',JSON.stringify(otherTexts));}catch(e){}}
+function localLoad(){try{const s=localStorage.getItem('ft_states');if(s)states=JSON.parse(s);const o=localStorage.getItem('ft_other');if(o)otherTexts=JSON.parse(o);}catch(e){}}
+localLoad();
+
+/* ── SHARED RECORDS (fetched from Google Sheets via Apps Script) ── */
+let records=[];
+
+/* ── SYNC STATUS ── */
+function setSyncStatus(state,msg){
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-txt');
+  dot.className='sync-dot '+state;
+  txt.textContent=msg;
+}
+
+/* ── API HELPERS ── */
+async function apiFetch(params){
+  if(!API_URL)return null;
+  try{
+    const url=API_URL+'?'+new URLSearchParams(params);
+    const r=await fetch(url);
+    return await r.json();
+  }catch(e){setSyncStatus('err','連線失敗');return null;}
+}
+async function apiPost(body){
+  if(!API_URL)return null;
+  try{
+    const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    return await r.json();
+  }catch(e){setSyncStatus('err','寫入失敗');return null;}
+}
+
+async function fetchRecords(showSpinner=false){
+  if(!API_URL){
+    records=[];renderRecords();
+    document.getElementById('nav-badge').textContent=0;
+    setSyncStatus('','未設定 API');
+    return;
+  }
+  if(showSpinner)document.getElementById('refresh-spin').classList.add('loading');
+  setSyncStatus('ing','同步中…');
+  const data=await apiFetch({action:'getRecords'});
+  document.getElementById('refresh-spin').classList.remove('loading');
+  if(data&&data.records){
+    records=data.records.filter(Boolean);
+    setSyncStatus('ok','已同步 · '+new Date().toLocaleTimeString('zh-TW'));
+    document.getElementById('nav-badge').textContent=records.length;
+    renderRecords();
+  } else {
+    setSyncStatus('err','讀取失敗，請確認 API 網址');
+  }
+}
+
+/* ── SETUP ── */
+function showSetup(){
+  const b=document.getElementById('setup-banner');
+  b.classList.add('show');
+  goPage('check');
+  b.scrollIntoView({behavior:'smooth'});
+}
+function saveApiUrl(){
+  const v=document.getElementById('api-input').value.trim();
+  if(!v){showToast('⚠️ 請輸入 API 網址');return;}
+  if(!v.startsWith('https://')){showToast('⚠️ 網址格式不正確');return;}
+  API_URL=v;
+  localStorage.setItem('ft_api_url',v);
+  document.getElementById('setup-banner').classList.remove('show');
+  showToast('✅ API 網址已儲存，正在連線…');
+  fetchRecords();
+}
+function checkApiSetup(){
+  const banner=document.getElementById('setup-banner');
+  if(!API_URL){banner.classList.add('show');setSyncStatus('','未設定 API');}
+  else{banner.classList.remove('show');fetchRecords();}
+}
+
+/* ── COUNT ── */
+function countAll(){
+  let total=0,done=0,reqTotal=0,reqDone=0;
+  DATA.forEach(sec=>sec.subsections.forEach(sub=>{
+    sub.items.forEach((it,i)=>{
+      const k=sec.id+'_'+sub.label+'_'+i;
+      total++;if(it.req)reqTotal++;
+      if(states[k]){done++;if(it.req)reqDone++;}
+    });
+    if(sub.hasOther)for(let k=0;k<3;k++){const key=sec.id+'_other_'+k;if(otherTexts[key]&&otherTexts[key].trim()){total++;if(states[key+'_check'])done++;}}
+  }));
+  return{total,done,reqTotal,reqDone};
+}
+
+/* ── UPDATE UI ── */
+function updateUI(){
+  const{total,done,reqTotal,reqDone}=countAll();
+  const pct=total?Math.round(done/total*100):0;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-done').textContent=done;
+  document.getElementById('s-pending').textContent=total-done;
+  document.getElementById('s-pct').textContent=pct+'%';
+  document.getElementById('top-bar').style.width=pct+'%';
+  document.getElementById('top-pct').textContent=pct+'%';
+  document.getElementById('sb-pct').textContent=pct+'%';
+  document.getElementById('sb-bar').style.width=pct+'%';
+  document.getElementById('sb-done').textContent=done;
+  document.getElementById('sb-pending').textContent=total-done;
+  DATA.forEach(sec=>{
+    let sd=0,st=0;
+    sec.subsections.forEach(sub=>{
+      sub.items.forEach((it,i)=>{st++;if(states[sec.id+'_'+sub.label+'_'+i])sd++;});
+      if(sub.hasOther)for(let k=0;k<3;k++){const key=sec.id+'_other_'+k;if(otherTexts[key]&&otherTexts[key].trim()){st++;if(states[key+'_check'])sd++;}}
+    });
+    const b=document.getElementById('bar_'+sec.id),c=document.getElementById('cnt_'+sec.id);
+    if(b)b.style.width=(st?Math.round(sd/st*100):0)+'%';
+    if(c)c.textContent=sd+'/'+st;
+  });
+  const ok=reqDone>=reqTotal&&reqTotal>0;
+  document.getElementById('sign-panel').style.display=ok?'block':'none';
+  document.getElementById('sign-blocked').style.display=ok?'none':'block';
+}
+
+const rClass={tech:'badge-tech',pm:'badge-pm',finance:'badge-finance'};
+const rLabel={tech:'技術客服',pm:'專案管理',finance:'財務人員'};
+
+/* ── BUILD CHECKLIST ── */
+const container=document.getElementById('sections');
+DATA.forEach(sec=>{
+  let html='';
+  sec.subsections.forEach(sub=>{
+    html+=`<div class="sub-label">${sub.label}</div>`;
+    sub.items.forEach((it,i)=>{
+      const key=sec.id+'_'+sub.label+'_'+i,chk=!!states[key];
+      const rTag=it.role?`<span class="badge ${rClass[it.role]}">${rLabel[it.role]}</span>`:'';
+      const qTag=`<span class="badge ${it.req?'badge-req':'badge-opt'}">${it.req?'必要':'選填'}</span>`;
+      html+=`<div class="item"><input type="checkbox" class="item-cb" id="cb_${key}" ${chk?'checked':''} onchange="toggle('${key}')"><div class="item-body"><div class="item-row"><span class="item-text${chk?' done':''}" id="lbl_${key}">${it.label}</span>${rTag}${qTag}</div>${it.note?`<div class="item-note">${it.note}</div>`:''}</div></div>`;
+    });
+    if(sub.hasOther){
+      for(let k=0;k<3;k++){
+        const key=sec.id+'_other_'+k,txt=otherTexts[key]||'',chk=!!states[key+'_check'];
+        html+=`<div class="other-row"><input type="checkbox" class="item-cb" id="cb_${key}_check" ${chk?'checked':''} onchange="toggleOther('${key}')"><span class="other-tag">其他金流</span><input type="text" class="other-input" id="txt_${key}" placeholder="請輸入金流名稱，例：街口支付" value="${txt}" oninput="updateOther('${key}',this.value)"><span class="badge badge-opt">選填</span></div>`;
+      }
+    }
+  });
+  const div=document.createElement('div');div.className='section';
+  div.innerHTML=`<div class="section-header" onclick="toggleSection('${sec.id}')"><div class="sec-icon" style="background:${sec.color}">${sec.icon}</div><span class="sec-title">${sec.title}</span><div class="sec-bar"><div class="sec-bar-fill" id="bar_${sec.id}"></div></div><span class="sec-count" id="cnt_${sec.id}">0/0</span><span class="sec-arrow open" id="arrow_${sec.id}">▼</span></div><div class="section-body open" id="body_${sec.id}">${html}</div>`;
+  container.appendChild(div);
+});
+
+function toggle(key){states[key]=!states[key];const cb=document.getElementById('cb_'+key);if(cb)cb.checked=!!states[key];const lb=document.getElementById('lbl_'+key);if(lb)lb.className='item-text'+(states[key]?' done':'');localSave();updateUI();}
+function toggleOther(key){states[key+'_check']=document.getElementById('cb_'+key+'_check').checked;localSave();updateUI();}
+function updateOther(key,val){otherTexts[key]=val;localSave();updateUI();}
+function toggleSection(id){document.getElementById('body_'+id).classList.toggle('open');document.getElementById('arrow_'+id).classList.toggle('open');}
+
+/* ── SIGN ── */
+document.getElementById('sign-date').value=new Date().toISOString().split('T')[0];
+
+async function submitSign(){
+  const dateVal=document.getElementById('sign-date').value;
+  const name=document.getElementById('sign-name').value.trim();
+  const role=document.getElementById('sign-role').value.trim();
+  const note=document.getElementById('sign-note').value.trim();
+  if(!dateVal){showToast('⚠️ 請選擇點檢日期');return;}
+  if(!name){showToast('⚠️ 請輸入點檢人員姓名');return;}
+  if(!role){showToast('⚠️ 請輸入職位／角色');return;}
+
+  const btn=document.getElementById('btn-sign');
+  btn.disabled=true;btn.textContent='儲存中…';
+
+  const snap={states:JSON.parse(JSON.stringify(states)),otherTexts:JSON.parse(JSON.stringify(otherTexts))};
+  const{total,done}=countAll();
+  const pct=total?Math.round(done/total*100):0;
+  const dateStr=new Date(dateVal+'T00:00:00').toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'});
+
+  const record={
+    id:Date.now(),
+    checkDate:dateStr,rawDate:dateVal,
+    name,role,note,
+    savedAt:new Date().toLocaleString('zh-TW'),
+    total,done,pct,snapshot:snap
+  };
+
+  if(API_URL){
+    setSyncStatus('ing','寫入中…');
+    const res=await apiPost({action:'addRecord',record});
+    if(!res||!res.ok){
+      showToast('❌ 寫入失敗，請確認 API 連線');
+      btn.disabled=false;btn.textContent='確認簽核 — 儲存至共用紀錄並清空表單';
+      setSyncStatus('err','寫入失敗');
+      return;
+    }
+    setSyncStatus('ok','已同步');
+  } else {
+    showToast('⚠️ 尚未設定 API，紀錄無法共用儲存');
+  }
+
+  // CLEAR local state
+  states={};otherTexts={};localSave();
+  document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('[id^="lbl_"]').forEach(el=>el.classList.remove('done'));
+  document.querySelectorAll('.other-input').forEach(el=>el.value='');
+  document.getElementById('sign-name').value='';
+  document.getElementById('sign-role').value='';
+  document.getElementById('sign-note').value='';
+  document.getElementById('sign-date').value=new Date().toISOString().split('T')[0];
+  btn.disabled=false;btn.textContent='確認簽核 — 儲存至共用紀錄並清空表單';
+  updateUI();
+  showToast('✅ 簽核完成，表單已清空');
+  await fetchRecords();
+  setTimeout(()=>goPage('records'),500);
+}
+
+/* ── RECORDS ── */
+function buildSnap(snap){
+  let html='';
+  DATA.forEach(sec=>{
+    html+=`<div class="snap-sec"><div class="snap-sec-title">${sec.icon} ${sec.title}</div>`;
+    sec.subsections.forEach(sub=>{
+      sub.items.forEach((it,i)=>{
+        const k=sec.id+'_'+sub.label+'_'+i,chk=!!(snap.states&&snap.states[k]);
+        html+=`<div class="snap-item"><div class="snap-ck ${chk?'y':'n'}">${chk?'✓':'✗'}</div><span class="snap-lbl${chk?'':' un'}">${it.label}</span><span class="badge ${it.req?'badge-req':'badge-opt'}">${it.req?'必要':'選填'}</span></div>`;
+      });
+      if(sub.hasOther&&snap.otherTexts){
+        for(let k=0;k<3;k++){
+          const key=sec.id+'_other_'+k;
+          if(snap.otherTexts[key]&&snap.otherTexts[key].trim()){
+            const chk=!!(snap.states&&snap.states[key+'_check']);
+            html+=`<div class="snap-item"><div class="snap-ck ${chk?'y':'n'}">${chk?'✓':'✗'}</div><span class="snap-lbl${chk?'':' un'}">${snap.otherTexts[key]}</span><span class="badge badge-opt">其他金流</span></div>`;
+          }
+        }
+      }
+    });
+    html+='</div>';
+  });
+  return html;
+}
+
+async function deleteRecord(id){
+  if(!confirm('確定要刪除此筆紀錄？'))return;
+  if(API_URL){
+    setSyncStatus('ing','刪除中…');
+    await apiPost({action:'deleteRecord',id});
+  }
+  await fetchRecords(false);
+  showToast('🗑️ 紀錄已刪除');
+}
+
+function toggleRec(id){
+  document.getElementById('rbody_'+id).classList.toggle('open');
+  document.getElementById('rarr_'+id).classList.toggle('open');
+}
+
+function renderRecords(){
+  const list=document.getElementById('rec-list');
+  const q=(document.getElementById('rec-search')||{value:''}).value.toLowerCase();
+  const f=(document.getElementById('rec-filter')||{value:''}).value;
+  let filtered=records.filter(r=>{
+    const ok=!q||(r.name||'').toLowerCase().includes(q)||(r.checkDate||'').includes(q)||(r.role||'').toLowerCase().includes(q)||(r.note||'').toLowerCase().includes(q);
+    if(!ok)return false;
+    if(f==='100')return r.pct===100;
+    if(f==='80')return r.pct>=80;
+    if(f==='lt100')return r.pct<100;
+    return true;
+  });
+  document.getElementById('nav-badge').textContent=records.length;
+  if(!filtered.length){
+    list.innerHTML=`<div class="empty-rec"><span class="ico">${records.length?'🔍':'📭'}</span>${records.length?'找不到符合條件的紀錄':'尚無點檢紀錄<br><small style="display:block;margin-top:6px">完成點檢並簽核後，紀錄將出現在這裡</small>'}</div>`;
+    return;
+  }
+  list.innerHTML=filtered.map((r,idx)=>`
+<div class="rec-card">
+  <div class="rec-card-head" onclick="toggleRec(${r.id})">
+    <span class="rec-num">#${String(filtered.length-idx).padStart(2,'0')}</span>
+    <div class="rec-info">
+      <div class="rec-date">點檢日期：${r.checkDate||'—'}</div>
+      <div class="rec-signer">${r.name||''}　${r.role||''}${r.note?' ・ '+r.note:''}</div>
+    </div>
+    <div class="rec-right">
+      <span class="rec-pct">${r.pct}%</span>
+      <span class="rec-cnt">${r.done}/${r.total}</span>
+      <span class="rec-arr" id="rarr_${r.id}">▼</span>
+    </div>
+  </div>
+  <div class="rec-body" id="rbody_${r.id}">
+    ${r.snapshot?buildSnap(r.snapshot):'<p style="font-size:12px;color:var(--text3)">無快照資料</p>'}
+    <div class="rec-meta">
+      <span>儲存時間：<strong>${r.savedAt||'—'}</strong></span>
+      <button class="btn-del" onclick="deleteRecord(${r.id})">刪除</button>
+    </div>
+  </div>
+</div>`).join('');
+}
+
+/* ── NAV ── */
+function goPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  document.getElementById('top-bar-wrap').style.display=page==='check'?'flex':'none';
+  if(page==='records')fetchRecords(true);
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+
+/* ── INIT ── */
+document.getElementById('sign-date').value=new Date().toISOString().split('T')[0];
+updateUI();
+checkApiSetup();
+</script>
+</body>
+</html>
